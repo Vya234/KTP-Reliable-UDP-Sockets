@@ -1,3 +1,9 @@
+// =====================================
+// Mini Project 1 Submission
+// Group Details:
+// Member 1 Name: Kavya Rai
+// Member 1 Roll number: 23CS10031
+// =====================================
 #ifndef KSOCKET_H
 #define KSOCKET_H
 
@@ -45,13 +51,6 @@
 #define ENOTBOUND 102
 #define ENOMESSAGE 103
 #define ENOSOCK 104
-
-// =====================================
-// Mini Project 1 Submission
-// Group Details:
-// Member 1 Name: Devanshu Agrawal
-// Member 1 Roll number: 22CS30066
-// =====================================
 
 typedef struct data_packet{
     int is_ack;

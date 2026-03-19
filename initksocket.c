@@ -1,3 +1,10 @@
+// =====================================
+// Mini Project 1 Submission
+// Group Details:
+// Member 1 Name: Kavya Rai
+// Member 1 Roll number: 23CS10031
+// =====================================
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,14 +23,6 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include "ksocket.h"
-
-// =====================================
-// Mini Project 1 Submission
-// Group Details:
-// Member 1 Name: Devanshu Agrawal
-// Member 1 Roll number: 22CS30066
-// =====================================
-
 
 // Shared resources
 int shmid;

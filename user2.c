@@ -1,11 +1,11 @@
-#include "ksocket.h"
-
 // =====================================
 // Mini Project 1 Submission
 // Group Details:
-// Member 1 Name: Devanshu Agrawal
-// Member 1 Roll number: 22CS30066
+// Member 1 Name: Kavya Rai
+// Member 1 Roll number: 23CS10031
 // =====================================
+
+#include "ksocket.h"
 
 int shmid;
 int lock[MAX_SOCKETS];
