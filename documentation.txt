@@ -1,0 +1,170 @@
+╔════════════════════════════════════════════════════════════════╗
+║                       DOCUMENTATION                            ║
+╚════════════════════════════════════════════════════════════════╝
+
+=====================================
+Mini Project 1 Submission
+Group Details:
+Member 1 Name: Devanshu Agrawal
+Member 1 Roll number: 22CS30066
+=====================================
+
+════════════════════════ SECTION 1: STRUCTURES ════════════════════════
+
+1. data_packet
+   - is_ack: Integer flag (0 for data, 1 for ACK).
+   - seq: Sequence number.
+   - Union of:
+     * data[MESSAGE_SIZE]: Buffer for message data.
+     * rwnd: Receiver window size.
+   Usage: Basic unit of communication between sender and receiver.
+
+2. swnd (Sender Window)
+   - unack[MAX_WINDOW_SIZE]: Array tracking unacknowledged packets in booleans. Indicates which packets in the send buffer are awaiting acknowledgment.
+   - receive_size: Available space in the receiver's buffer.
+   - window_size: Current window size for implementing a circular array.
+   - seq: Current sequence number.
+   - sliding_start: Start index of the sender's sliding window.
+   - sliding_end: End index of the sender's sliding window.
+   - retransmit_nospace: Indicates if retransmission is needed due to lack of space.
+   Usage: Manages the sliding window protocol for the sender.
+
+3. rwnd (Receiver Window)
+   - seq_map[MAX_WINDOW_SIZE]: Maps sequence numbers to buffer positions.
+   - window_size: Available buffer space.
+   - last_message: Last received message sequence number.
+   - sliding_start: Start index of the receiver's sliding window.
+   - sliding_end: End index of the receiver's sliding window.
+   Usage: Manages the sliding window protocol for the receiver.
+
+4. socket_entry (Shared Memory Entry)
+   - isAlloc: Socket allocation status:
+     * 0: Not allocated.
+     * 1: Allocated.
+     * 2: Allocated and bound.
+     * 3: Asked to close.
+     * 4: General error state (used for implementation).
+   - process_id: PID of the process that allocated the socket.
+   - sockid: Socket descriptor:
+     * 0: Socket not assigned.
+     * -1: Failed socket creation.
+     * > 0: Socket created successfully.
+   - sour: Source address (type: struct sockaddr_in).
+   - dest: Destination address (type: struct sockaddr_in).
+   - send_buffer[MAX_WINDOW_SIZE][MESSAGE_SIZE]: Sending buffer.
+   - receive_buffer[MAX_WINDOW_SIZE][MESSAGE_SIZE]: Receiving buffer.
+   - swnd: Sender window structure.
+   - rwnd: Receiver window structure.
+   - last_send: Timestamp of the last transmission (type: struct timeval).
+   - listen: Indicates if the socket is in listen mode.
+   - total_messages: Total number of messages sent/received.
+   - total_transmissions: Total number of transmissions.
+   - Flag: Space availability flag.
+   - timeout_tries: Number of timeout retries.
+   Usage: Main structure for socket management and data transfer.
+
+═══════════════════════ SECTION 2: FUNCTIONS ═══════════════════════
+
+KERNEL LEVEL FUNCTIONS:
+1. k_socket(int family,int protocol, int flag);
+   - Creates new socket entry in shared memory
+   - Returns socket descriptor or -1 on error
+
+2. k_bind(int kfd,struct sockaddr_in* source, struct sockaddr_in* dest)
+   - Binds socket to source and destination addresses
+   - Returns 1 on success, -1 on failure
+
+3. k_sendto(int kfd,char* buf,int buf_size, int flag,struct sockaddr_in* dest,socklen_t dest_size)
+   - Sends data through socket using sliding window
+   - Returns bytes sent or -1 on error
+
+4. k_recvfrom(int kfd,  char* buf,int buf_size,int flag,struct sockaddr_in * dest, socklen_t* dest_size);
+   - Receives data from socket using sliding window
+   - Returns bytes received or -1 on error
+
+5. k_close(kfd)
+   - Closes socket and cleans up resources
+   - Returns -1 after completion
+
+THREADS:
+1. r_thread (Receiver Thread)
+   - Handles incoming packets
+   - Manages acknowledgments
+   - Updates receive window
+   - Implements packet drop simulation
+
+2. s_thread (Sender Thread)
+   - Handles packet transmission
+   - Manages retransmissions
+   - Implements timeout mechanism
+   - Controls flow based on window size
+
+3. garbage_collector Thread
+   - Monitors socket usage
+   - Cleans up abandoned sockets
+   - Reinitializes socket entries
+   - Maintains system stability
+
+UTILITY FUNCTIONS:
+1. P() and V(): Semaphore operations
+2. DropMessage(): Simulates packet loss
+3. check_send_timeout(): Checks transmission timeouts
+4. packet_to_buf() and buf_to_packet(): Packet serialization
+5. max(): computes max of two numbers.
+6. check_resend_timeout(): checks the resend time with more resend it scales the time.
+
+
+═══════════════════════ SECTION 3: PERFORMANCE TABLE ═══════════════════════
+
+┌──────────────┬─────────────────┬────────────────┬───────────┐
+│   P Value    │ Total Messages  │ Transmissions  │   Ratio   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.05      │       225       │        316     │    1.4    │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.10      │        225      │        382     │    1.70   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.15      │         225     │        467     │    2.08   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.20      │         225     │        531     │    2.36   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.25      │          225    │        633     │    2.81   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.30      │         225     │        687     │    3.05   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.35      │         225     │       957      │    4.25   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.40      │         225     │       1130     │    5.02   │
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.45      │         225     │       1534     │    6.82   |
+├──────────────┼─────────────────┼────────────────┼───────────┤
+│    0.50      │        225      │       1528     │    6.79   │
+└──────────────┴─────────────────┴────────────────┴───────────┘
+
+════════════════════════ IMPLEMENTATION DETAILS ════════════════════════
+
+1. Use of Circular Array:
+   - A circular array (also known as a circular buffer or ring buffer) is used to efficiently manage the storage of messages in both the send and receive buffers.
+   - The circular array allows for continuous reuse of buffer space without requiring frequent reallocation or shifting of data.
+   - Key features:
+     * The buffer has a fixed size (MAX_WINDOW_SIZE), and once the end of the array is reached, the index wraps around to the beginning.
+     * Two pointers, `sliding_start` and `sliding_end`, are used to track the start and end of the valid data in the buffer.
+     * When new data is added, it is placed at the `sliding_end` position, and the pointer is incremented (with wrap-around).
+     * When data is processed or acknowledged, it is removed from the `sliding_start` position, and the pointer is incremented (with wrap-around).
+   - Benefits:
+     * Efficient memory usage: The buffer reuses space dynamically, avoiding unnecessary memory allocation.
+     * Simplified management: The circular nature eliminates the need to shift elements when data is removed.
+     * Ideal for sliding window protocols: It aligns perfectly with the requirements of tracking unacknowledged packets and managing window boundaries.
+
+2. Use of Wrap-Around for Sequence Numbers:
+   - Sequence numbers are used to identify and order packets in the communication protocol.
+   - To handle the finite range of sequence numbers (1 to 255), a wrap-around mechanism is implemented:
+     * When the sequence number reaches 255, it wraps around to 1 instead of incrementing further.
+     * This ensures that sequence numbers remain within a manageable range while maintaining uniqueness and order.
+   - Key features:
+     * The wrap-around is implemented using modulo arithmetic. For example: `next_seq = (current_seq + 1) % 256 + ((current_seq + 1) == 0)`.
+     * The receiver uses the sequence number to detect out-of-order packets, duplicates, or missing packets.
+     * The wrap-around mechanism ensures that the protocol can handle long-running communication sessions without running out of sequence numbers.
+   - Benefits:
+     * Prevents overflow: By wrapping around, the sequence numbers stay within the defined range (1 to 255).
+     * Maintains correctness: The sliding window protocol relies on sequence numbers to ensure reliable and ordered delivery of packets.
+     * Scalability: The wrap-around mechanism allows the protocol to handle a large number of packets without requiring additional resources.

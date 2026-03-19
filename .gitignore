@@ -1,0 +1,6 @@
+output.txt
+*.o
+*.a
+init
+user1
+user2
