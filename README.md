@@ -67,6 +67,5 @@ make
 
 ## 👨‍💻 Author
 
-KAVYA RAI
-
+KAVYA RAI  
 IIT Kharagpur
