@@ -3,14 +3,14 @@
 // Group Details:
 // Member 1 Name: Kavya Rai
 // Member 1 Roll number: 23CS10031
+// Member 2 Name: Nutubilli Gayatri
+// Member 2 Roll number: 23CS10048
 // =====================================
 #ifndef KSOCKET_H
 #define KSOCKET_H
 
 #include <netinet/in.h>
 #include <stdbool.h>
-#include <sys/shm.h>
-#include <sys/sem.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

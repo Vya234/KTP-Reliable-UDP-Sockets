@@ -3,6 +3,8 @@
 // Group Details:
 // Member 1 Name: Kavya Rai
 // Member 1 Roll number: 23CS10031
+// Member 2 Name: Nutubilli Gayatri
+// Member 2 Roll number: 23CS10048
 // =====================================
 
 #include "ksocket.h" 
@@ -260,11 +262,10 @@ int k_close(int kfd){
     while(SM[kfd].swnd.window_size != 10 && SM[kfd].timeout_tries < MAX_RETRIES) usleep(1000);
 
     P(lock[kfd]);
-    printf("Total Messages: %d Total Transmissions: %d Ratio: %.2f\n",SM[kfd].total_messages,SM[kfd].total_transmissions,(1.00 * SM[kfd].total_transmissions ) / SM[kfd].total_messages);
+    if(SM[kfd].total_messages > 0)
+        printf("Total Messages: %d Total Transmissions: %d Ratio: %.2f\n",SM[kfd].total_messages,SM[kfd].total_transmissions,(1.00 * SM[kfd].total_transmissions ) / SM[kfd].total_messages);
     SM[kfd].isAlloc = 3;
     V(lock[kfd]);
     shmdt(SM);
     return 1;
 }
-
-

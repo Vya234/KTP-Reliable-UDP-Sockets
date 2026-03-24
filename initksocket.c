@@ -3,6 +3,8 @@
 // Group Details:
 // Member 1 Name: Kavya Rai
 // Member 1 Roll number: 23CS10031
+// Member 2 Name: Nutubilli Gayatri
+// Member 2 Roll number: 23CS10048
 // =====================================
 
 #include <stdio.h>
@@ -216,7 +218,7 @@ void *r_thread(void *args){
                         int old_start = SM[i].rwnd.last_message-21;
                         if (old_start < 1) old_start += 255;
 
-                        // Check message is part of th current window or not
+                        // Check message is part of the current window or not
                         int curr_wind = 0;
                         if ((end > front) && (packet->seq >= front && packet->seq <= end)) curr_wind = 1;
                         else if ((end < front) && (packet->seq>=front || packet->seq<=end)) curr_wind = 1;
@@ -360,67 +362,81 @@ void *s_thread(void *args){
         for(int i=0; i<MAX_SOCKETS; i++) {
             P(lock[i]);
             data_packet* packet = (data_packet*) malloc (sizeof(data_packet));
-            // if(SM[i].timeout_tries == MAX_RETRIES){
-            //     // if max timeout has been reached don't do send
-            //     fflush(stdout);
-            //     printf("\033[1;31m");
-            //     printf("[S THREAD] MAX RETRIES REACHED.\n");
-            //     printf("\033[0m");
-            //     fflush(stdout);
-            // }
-            if (SM[i].isAlloc == 2 && ((SM[i].swnd.sliding_end != SM[i].swnd.sliding_start) || (SM[i].swnd.window_size == 0)) && check_send_timeout(&SM[i].last_send)){
-                
-                gettimeofday(&SM[i].last_send, NULL);
 
-                // if space if available start sending the messages.
+            if (SM[i].isAlloc == 2 && ((SM[i].swnd.sliding_end != SM[i].swnd.sliding_start) || (SM[i].swnd.window_size == 0)) && check_send_timeout(&SM[i].last_send)){
+
+                // if space is available start sending the messages.
                 if (SM[i].swnd.receive_size) {
                     SM[i].timeout_tries++;
-                    char databuf[520];
-                    bzero(databuf, 520);
 
-                    packet->seq = SM[i].swnd.seq;
-
+                    // snapshot what we need to send before releasing lock
                     int start = SM[i].swnd.sliding_start;
                     int end = SM[i].swnd.sliding_end;
                     int c = (SM[i].swnd.window_size == 0);
                     int max_count = SM[i].swnd.receive_size;
-                    while(((start != end) || c) && SM[i].swnd.unack[(start+1)%10] && max_count) {
+                    int seq = SM[i].swnd.seq;
+                    struct sockaddr_in dest = SM[i].dest;
+                    int sockid = SM[i].sockid;
+
+                    // build list of packets to send
+                    char bufs[MAX_WINDOW_SIZE][520];
+                    int lens[MAX_WINDOW_SIZE];
+                    int count = 0;
+
+                    while(((start != end) || c) && SM[i].swnd.unack[(start+1)%10] && max_count && count < MAX_WINDOW_SIZE) {
                         c = 0;
                         max_count--;
                         start = (start + 1)%10;
-                        
-                        bzero(databuf, 520);
+
+                        bzero(bufs[count], 520);
                         packet->is_ack = 0;
+                        packet->seq = seq;
                         strcpy(packet->data, SM[i].send_buffer[start]);
+                        packet_to_buf(packet, bufs[count]);
+                        lens[count] = strlen(bufs[count]);
+                        count++;
 
-                        packet_to_buf(packet,databuf);
-
-                        SM[i].total_transmissions++;
-                        sendto(SM[i].sockid, databuf, strlen(databuf), 0, (struct sockaddr *) &SM[i].dest, sizeof(SM[i].dest));
-
-                        packet->seq++;
-                        packet->seq%=256;
-                        if (packet->seq == 0) packet->seq++;
+                        seq++;
+                        seq %= 256;
+                        if (seq == 0) seq++;
                     }
-                } 
-                else if (check_resend_timeout(&SM[i].last_send, SM[i].swnd.retransmit_nospace)){
-                    // Ping the receiver in case of NOSPACE Hang up.
 
+                    SM[i].total_transmissions += count;
+                    gettimeofday(&SM[i].last_send, NULL);
+                    V(lock[i]);
+
+                    // send outside the lock
+                    for (int j = 0; j < count; j++) {
+                        sendto(sockid, bufs[j], lens[j], 0, (struct sockaddr *)&dest, sizeof(dest));
+                    }
+                    free(packet);
+                    continue;
+                }
+                else if (check_resend_timeout(&SM[i].last_send, SM[i].swnd.retransmit_nospace)){
+                    // Ping the receiver in case of NOSPACE hang up.
                     SM[i].timeout_tries++;
-                    char databuf[520];
-                    bzero(databuf, 520);
 
                     packet->seq = SM[i].swnd.seq - 1;
                     if (packet->seq == 0) packet->seq = 255;
                     packet->is_ack = 0;
 
-                    packet_to_buf(packet,databuf);
-                    fflush(stdout);
+                    char databuf[520];
+                    bzero(databuf, 520);
+                    packet_to_buf(packet, databuf);
+                    int len = strlen(databuf);
+                    struct sockaddr_in dest = SM[i].dest;
+                    int sockid = SM[i].sockid;
 
-                    sendto(SM[i].sockid, databuf, strlen(databuf), 0, (struct sockaddr *) &SM[i].dest, sizeof(SM[i].dest));
+                    gettimeofday(&SM[i].last_send, NULL);
+                    V(lock[i]);
+
+                    sendto(sockid, databuf, len, 0, (struct sockaddr *)&dest, sizeof(dest));
+                    free(packet);
+                    continue;
                 }
             }
             V(lock[i]);
+            free(packet);
         }
     }
 }

@@ -1,12 +1,12 @@
-╔════════════════════════════════════════════════════════════════╗
-║                       DOCUMENTATION                            ║
-╚════════════════════════════════════════════════════════════════╝
-
+                                   DOCUMENTATION
+_______________________________________________________________________________________
 =====================================
 Mini Project 1 Submission
 Group Details:
 Member 1 Name: Kavya Rai
 Member 1 Roll number: 23CS10031
+Member 2 Name: Nutubilli Gayatri
+Member 2 Roll number: 23CS10048
 =====================================
 
 ════════════════════════ SECTION 1: STRUCTURES ════════════════════════
@@ -66,7 +66,7 @@ Member 1 Roll number: 23CS10031
 ═══════════════════════ SECTION 2: FUNCTIONS ═══════════════════════
 
 KERNEL LEVEL FUNCTIONS:
-1. k_socket(int family,int protocol, int flag);
+1. k_socket(int domain, int type, int protocol);
    - Creates new socket entry in shared memory
    - Returns socket descriptor or -1 on error
 
@@ -107,7 +107,7 @@ THREADS:
 
 UTILITY FUNCTIONS:
 1. P() and V(): Semaphore operations
-2. DropMessage(): Simulates packet loss
+2. dropMessage(): Simulates packet loss
 3. check_send_timeout(): Checks transmission timeouts
 4. packet_to_buf() and buf_to_packet(): Packet serialization
 5. max(): computes max of two numbers.
@@ -116,29 +116,29 @@ UTILITY FUNCTIONS:
 
 ═══════════════════════ SECTION 3: PERFORMANCE TABLE ═══════════════════════
 
-┌──────────────┬─────────────────┬────────────────┬───────────┐
-│   P Value    │ Total Messages  │ Transmissions  │   Ratio   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.05      │       225       │        316     │    1.4    │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.10      │        225      │        382     │    1.70   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.15      │         225     │        467     │    2.08   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.20      │         225     │        531     │    2.36   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.25      │          225    │        633     │    2.81   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.30      │         225     │        687     │    3.05   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.35      │         225     │       957      │    4.25   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.40      │         225     │       1130     │    5.02   │
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.45      │         225     │       1534     │    6.82   |
-├──────────────┼─────────────────┼────────────────┼───────────┤
-│    0.50      │        225      │       1528     │    6.79   │
-└──────────────┴─────────────────┴────────────────┴───────────┘
+┌──────────────────────────────────────────────────────┐
+│  P Value    Total Messages     Transmissions   Ratio |
+|──────────────────────────────────────────────────────|
+│   0.05            222               328         1.48 |
+--------------------------------------------------------
+|   0.10            222               376         1.69 |
+--------------------------------------------------------
+|   0.15            222               497         2.24 |
+--------------------------------------------------------
+│   0.20            222               544         2.45 |
+--------------------------------------------------------
+│   0.25            222               673         3.03 |
+--------------------------------------------------------
+│   0.30            222               814         3.67 |
+--------------------------------------------------------
+│   0.35            222               950         4.28 |
+--------------------------------------------------------
+│   0.40            222              1197         5.39 |
+--------------------------------------------------------
+│   0.45            222              1427         6.43 |
+--------------------------------------------------------
+│   0.50            222              1614         7.27 |
+└──────────────────────────────────────────────────────┘
 
 ════════════════════════ IMPLEMENTATION DETAILS ════════════════════════
 
@@ -147,9 +147,9 @@ UTILITY FUNCTIONS:
    - The circular array allows for continuous reuse of buffer space without requiring frequent reallocation or shifting of data.
    - Key features:
      * The buffer has a fixed size (MAX_WINDOW_SIZE), and once the end of the array is reached, the index wraps around to the beginning.
-     * Two pointers, `sliding_start` and `sliding_end`, are used to track the start and end of the valid data in the buffer.
-     * When new data is added, it is placed at the `sliding_end` position, and the pointer is incremented (with wrap-around).
-     * When data is processed or acknowledged, it is removed from the `sliding_start` position, and the pointer is incremented (with wrap-around).
+     * Two pointers, sliding_start and sliding_end, are used to track the start and end of the valid data in the buffer.
+     * When new data is added, it is placed at the sliding_end position, and the pointer is incremented (with wrap-around).
+     * When data is processed or acknowledged, it is removed from the sliding_start position, and the pointer is incremented (with wrap-around).
    - Benefits:
      * Efficient memory usage: The buffer reuses space dynamically, avoiding unnecessary memory allocation.
      * Simplified management: The circular nature eliminates the need to shift elements when data is removed.
@@ -161,7 +161,7 @@ UTILITY FUNCTIONS:
      * When the sequence number reaches 255, it wraps around to 1 instead of incrementing further.
      * This ensures that sequence numbers remain within a manageable range while maintaining uniqueness and order.
    - Key features:
-     * The wrap-around is implemented using modulo arithmetic. For example: `next_seq = (current_seq + 1) % 256 + ((current_seq + 1) == 0)`.
+     * The wrap-around is implemented using modulo arithmetic. For example: next_seq = (current_seq + 1) % 256 + ((current_seq + 1) == 0).
      * The receiver uses the sequence number to detect out-of-order packets, duplicates, or missing packets.
      * The wrap-around mechanism ensures that the protocol can handle long-running communication sessions without running out of sequence numbers.
    - Benefits:
